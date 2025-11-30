@@ -54,13 +54,10 @@ Run the application:
 Open your browser at:
 http://localhost:8080
 
-
+## Summary
 The interface lets you:
 
-Create new events
-
-Submit participant feedback
-
-View feedback sentiment (POSITIVE / NEUTRAL / NEGATIVE)
-
-See automatic event sentiment summaries
+- Create new events
+- Submit participant feedback
+- View feedback sentiment (POSITIVE / NEUTRAL / NEGATIVE)
+- See automatic event sentiment summaries
