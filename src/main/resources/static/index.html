@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EventSync – Feedback Analyzer</title>
+    <style>
+        :root {
+            --purple: #6366f1;
+            --purple-dark: #4f46e5;
+            --navy: #1f2937;
+            --navy-dark: #020617;
+            --green: #34d399;
+            --yellow: #facc15;
+            --red: #fb7185;
+            --bg: #f9fafb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-circle {
+            position: fixed;
+            border-radius: 999px;
+            z-index: -1;
+            opacity: 0.8;
+        }
+        .bg-circle.yellow {
+            width: 420px; height: 420px;
+            background: #facc15;
+            bottom: -180px; left: -120px;
+        }
+        .bg-circle.coral {
+            width: 420px; height: 420px;
+            background: #fb7185;
+            top: -160px; right: -140px;
+        }
+
+        .shell {
+            width: min(1100px, 100vw - 40px);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+            display: grid;
+            grid-template-columns: 1.1fr 1.5fr;
+            background: white;
+        }
+
+        /* LEFT PANEL – events */
+        .left-panel {
+            background: linear-gradient(140deg, var(--purple), var(--purple-dark));
+            color: white;
+            padding: 28px 30px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .brand span {
+            display: inline-block;
+            padding: 4px 10px;
+            margin-left: 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: rgba(15, 23, 42, 0.25);
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .panel-section-title {
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .small { font-size: 12px; opacity: 0.75; }
+
+        ul { list-style: none; margin: 0; padding: 0; }
+
+        .events-box {
+            margin-top: 4px;
+            background: rgba(15, 23, 42, 0.25);
+            border-radius: 18px;
+            padding: 12px 14px 10px;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .events-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        #eventList {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.35);
+            cursor: pointer;
+        }
+        .event-item:last-child { border-bottom: none; }
+        .event-item span:first-child { font-weight: 500; }
+        .event-item span:last-child { font-size: 11px; opacity: 0.7; }
+
+        .create-event-box {
+            margin-top: 14px;
+            border-radius: 18px;
+            padding: 16px 16px 14px;
+            background: rgba(15, 23, 42, 0.2);
+        }
+
+        .create-event-box form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .create-event-box label:not(:first-of-type) {
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: none;
+            padding: 8px 10px;
+            font-size: 13px;
+            outline: none;
+            background: rgba(15, 23, 42, 0.28);
+            color: white;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(226, 232, 240, 0.7);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button.primary {
+            background: white;
+            color: var(--purple-dark);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid #9ca3af;
+            color: #e5e7eb;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
+
+        .status {
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        .status.ok { color: #4ade80; }
+        .status.error { color: #ef4444; }
+
+        /* RIGHT PANEL – feedback + summary */
+        .right-panel {
+            background: #020617;
+            color: #e5e7eb;
+            padding: 24px 26px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .right-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .right-header h2 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .right-header span {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .selected-label {
+            font-size: 13px;
+        }
+        .selected-label strong { color: #f9fafb; }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .pill.POSITIVE {
+            background: rgba(52, 211, 153, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(52, 211, 153, 0.5);
+        }
+        .pill.NEGATIVE {
+            background: rgba(248, 113, 113, 0.15);
+            color: #fecaca;
+            border: 1px solid rgba(248, 113, 113, 0.45);
+        }
+        .pill.NEUTRAL {
+            background: rgba(148, 163, 184, 0.15);
+            color: #e5e7eb;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+        }
+
+        .feedback-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 1.1fr;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .card-sm {
+            background: #020617;
+            border-radius: 16px;
+            padding: 10px 12px;
+            border: 1px solid #111827;
+        }
+
+        .card-sm h3 {
+            margin: 0 0 6px;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+
+        textarea#feedbackText {
+            background: #020617;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            min-height: 76px;
+            width: 100%;
+            color: #e5e7eb;
+        }
+        textarea#feedbackText::placeholder { color: #6b7280; }
+
+        #feedbackList {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        #feedbackList li {
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 1px solid #111827;
+        }
+        #feedbackList li:last-child { border-bottom: none; }
+
+        #feedbackList .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #feedbackList .meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .summary-grid {
+            margin-top: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .summary-box {
+            background: #020617;
+            border-radius: 14px;
+            padding: 8px 10px;
+            border: 1px solid #111827;
+        }
+
+        .summary-label {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+
+        .summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .summary-value.positive { color: #6ee7b7; }
+        .summary-value.neutral { color: #e5e7eb; }
+        .summary-value.negative { color: #fecaca; }
+
+        @media (max-width: 960px) {
+            .shell { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 720px) {
+            .feedback-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-circle yellow"></div>
+<div class="bg-circle coral"></div>
+
+<div class="shell">
+    <!-- LEFT PANEL -->
+    <section class="left-panel">
+        <div>
+            <div class="brand">
+                EVENTSYNC <span>FEEDBACK ANALYZER</span>
+            </div>
+            <p class="subtitle">Create events and analyze feedback sentiment.</p>
+        </div>
+
+        <!-- CREATE EVENT FIRST -->
+        <div class="create-event-box">
+            <form id="createEventForm">
+                <label for="eventTitle">New event title</label>
+                <input id="eventTitle" type="text" placeholder="Event title" required />
+
+                <label for="eventDescription">Short description</label>
+                <textarea id="eventDescription" placeholder="Short description" required></textarea>
+
+                <button class="primary" type="submit">➕ Create event</button>
+                <div id="eventStatus" class="status"></div>
+            </form>
+        </div>
+
+        <!-- EVENTS LIST BELOW -->
+        <div class="events-box">
+            <div class="events-box-header">
+                <span>Events</span>
+                <span class="small">Click to select</span>
+            </div>
+            <ul id="eventList"></ul>
+        </div>
+    </section>
+
+    <!-- RIGHT PANEL -->
+    <section class="right-panel">
+        <div class="right-header">
+            <h2>Feedback</h2>
+            <span>Powered by Hugging Face sentiment analysis</span>
+        </div>
+
+        <div class="selected-label">
+            Selected event: <strong id="selectedEventLabel">none</strong>
+        </div>
+
+        <div class="feedback-layout">
+            <!-- Submit feedback -->
+            <div class="card-sm">
+                <h3>Submit feedback</h3>
+                <form id="feedbackForm">
+                    <textarea
+                            id="feedbackText"
+                            placeholder="Type participant feedback here..."
+                            required
+                    ></textarea>
+                    <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <button class="primary" type="submit" id="feedbackSubmitBtn" disabled>
+                            💬 Submit feedback
+                        </button>
+                        <div id="feedbackStatus" class="status"></div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Feedback list -->
+            <div class="card-sm">
+                <h3>Recent feedback</h3>
+                <ul id="feedbackList"></ul>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="card-sm" style="margin-top:4px;">
+            <div class="summary-row">
+                <h3>Sentiment summary</h3>
+                <div style="display:flex;align-items:center;gap:8px;">
+<!--                    <button class="secondary" type="button" id="refreshSummaryBtn" disabled>-->
+<!--                        🔄 Refresh-->
+<!--                    </button>-->
+                    <span id="summaryStatus" class="status"></span>
+                </div>
+            </div>
+
+            <div class="summary-grid" id="summaryGrid">
+                <div class="summary-box">
+                    <div class="summary-label">Total</div>
+                    <div class="summary-value" id="sumTotal">0</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Positive</div>
+                    <div class="summary-value positive" id="sumPositive">0</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Neutral</div>
+                    <div class="summary-value neutral" id="sumNeutral">0</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Negative</div>
+                    <div class="summary-value negative" id="sumNegative">0</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const API_BASE = '';
+
+    let selectedEventId = null;
+
+    const eventListEl = document.getElementById('eventList');
+    const selectedEventLabelEl = document.getElementById('selectedEventLabel');
+    const feedbackListEl = document.getElementById('feedbackList');
+    const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+    const refreshSummaryBtn = document.getElementById('refreshSummaryBtn');
+
+    const sumTotalEl = document.getElementById('sumTotal');
+    const sumPositiveEl = document.getElementById('sumPositive');
+    const sumNeutralEl = document.getElementById('sumNeutral');
+    const sumNegativeEl = document.getElementById('sumNegative');
+
+    const eventStatusEl = document.getElementById('eventStatus');
+    const feedbackStatusEl = document.getElementById('feedbackStatus');
+    const summaryStatusEl = document.getElementById('summaryStatus');
+
+    function setStatus(el, msg, ok) {
+        el.textContent = msg || '';
+        el.className = 'status ' + (msg ? (ok ? 'ok' : 'error') : '');
+    }
+
+    async function loadEvents() {
+        try {
+            const res = await fetch(API_BASE + '/events');
+            if (!res.ok) throw new Error('Failed to load events');
+            const events = await res.json();
+            renderEvents(events);
+        } catch (e) {
+            console.error(e);
+            setStatus(eventStatusEl, 'Failed to load events', false);
+        }
+    }
+
+    function renderEvents(events) {
+        eventListEl.innerHTML = '';
+        if (!events || events.length === 0) {
+            eventListEl.innerHTML = '<li class="small">No events yet. Create one above.</li>';
+            return;
+        }
+
+        events.forEach(ev => {
+            const li = document.createElement('li');
+            li.className = 'event-item';
+            li.onclick = () => selectEvent(ev);
+
+            const left = document.createElement('span');
+            left.textContent = `#${ev.id} – ${ev.title} — ${ev.description}`;
+
+            const right = document.createElement('span');
+            right.textContent = 'Select';
+
+            li.appendChild(left);
+            li.appendChild(right);
+            eventListEl.appendChild(li);
+        });
+    }
+
+    function selectEvent(ev) {
+        selectedEventId = ev.id;
+        selectedEventLabelEl.textContent = `#${ev.id} – ${ev.title}`;
+        feedbackSubmitBtn.disabled = false;
+        refreshSummaryBtn.disabled = false;
+        setStatus(feedbackStatusEl, '', true);
+        setStatus(summaryStatusEl, '', true);
+        loadFeedback();
+        loadSummary();
+    }
+
+    document.getElementById('createEventForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('eventTitle').value.trim();
+        const description = document.getElementById('eventDescription').value.trim();
+
+        if (!title || !description) {
+            setStatus(eventStatusEl, 'Please fill in title and description.', false);
+            return;
+        }
+
+        try {
+            const res = await fetch(API_BASE + '/events', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ title, description })
+            });
+            if (!res.ok) throw new Error('Failed to create event');
+
+            const created = await res.json();
+            setStatus(eventStatusEl, `Event #${created.id} created.`, true);
+            document.getElementById('createEventForm').reset();
+            await loadEvents();
+        } catch (err) {
+            console.error(err);
+            setStatus(eventStatusEl, 'Error creating event.', false);
+        }
+    });
+
+    document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedEventId) {
+            setStatus(feedbackStatusEl, 'Select an event first.', false);
+            return;
+        }
+
+        const text = document.getElementById('feedbackText').value.trim();
+        if (!text) {
+            setStatus(feedbackStatusEl, 'Feedback text cannot be empty.', false);
+            return;
+        }
+
+        try {
+            feedbackSubmitBtn.disabled = true;
+            const res = await fetch(API_BASE + `/events/${selectedEventId}/feedback`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text })
+            });
+            feedbackSubmitBtn.disabled = false;
+
+            if (!res.ok) throw new Error('Failed to submit feedback');
+            const saved = await res.json();
+
+            setStatus(feedbackStatusEl, `Saved with sentiment: ${saved.sentiment}`, true);
+            document.getElementById('feedbackForm').reset();
+            await loadFeedback();
+            await loadSummary();
+        } catch (err) {
+            console.error(err);
+            feedbackSubmitBtn.disabled = false;
+            setStatus(feedbackStatusEl, 'Error submitting feedback.', false);
+        }
+    });
+
+    async function loadFeedback() {
+        if (!selectedEventId) return;
+        try {
+            const res = await fetch(API_BASE + `/events/${selectedEventId}/feedback`);
+            if (!res.ok) throw new Error('Failed to load feedback');
+            const feedbacks = await res.json();
+            renderFeedback(feedbacks);
+        } catch (e) {
+            console.error(e);
+            setStatus(feedbackStatusEl, 'Failed to load feedback.', false);
+        }
+    }
+
+    function renderFeedback(feedbacks) {
+        feedbackListEl.innerHTML = '';
+        if (!feedbacks || feedbacks.length === 0) {
+            feedbackListEl.innerHTML = '<li class="small">No feedback yet for this event.</li>';
+            return;
+        }
+
+        feedbacks.forEach(fb => {
+            const li = document.createElement('li');
+
+            const top = document.createElement('div');
+            top.className = 'top-row';
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = fb.text;
+
+            const pill = document.createElement('span');
+            pill.className = `pill ${fb.sentiment}`;
+            pill.textContent = fb.sentiment;
+
+            top.appendChild(textSpan);
+            top.appendChild(pill);
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.textContent = `#${fb.id}`;
+
+            li.appendChild(top);
+            li.appendChild(meta);
+
+            feedbackListEl.appendChild(li);
+        });
+    }
+
+    async function loadSummary() {
+        if (!selectedEventId) return;
+        try {
+            const res = await fetch(API_BASE + `/events/${selectedEventId}/summary`);
+            if (!res.ok) throw new Error('Failed to load summary');
+            const sum = await res.json();
+
+            sumTotalEl.textContent = sum.totalFeedbacks;
+            sumPositiveEl.textContent = sum.positiveCount;
+            sumNeutralEl.textContent = sum.neutralCount;
+            sumNegativeEl.textContent = sum.negativeCount;
+
+            setStatus(summaryStatusEl, 'Summary updated.', true);
+        } catch (e) {
+            console.error(e);
+            setStatus(summaryStatusEl, 'Failed to load summary.', false);
+        }
+    }
+
+    refreshSummaryBtn.addEventListener('click', loadSummary);
+
+    loadEvents();
+</script>
+</body>
+</html>
