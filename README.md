@@ -30,7 +30,7 @@ Add this to your shell config:
 ### Setting Environment Variables in IntelliJ IDEA (Alternative)
 
 1. Open IntelliJ IDEA and go to `Run` → `Edit Configurations`.
-2. Select your Spring Boot run configuration.
+2. Select your Spring Boot\ Maven run configuration.
 3. In the `Environment Variables` field, click the `...` button.
 4. Add: HF_API_TOKEN=your_api_token.
 5. Click `OK` to save the configuration.****
