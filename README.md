@@ -16,6 +16,14 @@ If this variable is not set, the system falls back to a dummy token and all feed
 
 ## Configuring the HF_API_TOKEN
 
+### Setting Environment Variables in IntelliJ IDEA 
+
+1. Open IntelliJ IDEA and go to `Run` → `Edit Configurations`.
+2. Select your Spring Boot run configuration.
+3. In the `Environment Variables` field, click the `...` button.
+4. Add: HF_API_TOKEN=your_api_token.
+5. Click `OK` to save the configuration.****
+
 ### Setting Environment Variables on Windows
 
 1. Open  
@@ -33,15 +41,6 @@ Add this to your shell config:
   echo 'export HF_API_TOKEN=your_api_token' >> ~/.bashrc
   source ~/.bashrc
   ```
-### Setting Environment Variables in IntelliJ IDEA (Alternative)
-
-1. Open IntelliJ IDEA and go to `Run` → `Edit Configurations`.
-2. Select your Spring Boot run configuration.
-3. In the `Environment Variables` field, click the `...` button.
-4. Add: HF_API_TOKEN=your_api_token.
-5. Click `OK` to save the configuration.****
-
-   
 
 ## Running 
 
